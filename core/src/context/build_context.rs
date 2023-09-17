@@ -138,7 +138,7 @@ impl<'a> BuildCtx<'a> {
   /// `BuildCtx` as mutable reference in `Widget`
   #[allow(clippy::mut_from_ref)]
   pub(crate) fn force_as_mut(&self) -> &mut Self {
-    #[allow(clippy::cast_ref_to_mut)]
+    #[allow(cast_ref_to_mut)]
     unsafe {
       &mut *(self as *const Self as *mut Self)
     }

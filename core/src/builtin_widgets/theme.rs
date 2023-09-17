@@ -110,8 +110,14 @@ impl Default for FullTheme {
       huge: Size::new(64., 64.),
     };
 
-    let regular_family = Box::new([FontFamily::Name(std::borrow::Cow::Borrowed("Lato"))]);
-    let medium_family = Box::new([FontFamily::Name(std::borrow::Cow::Borrowed("Lato"))]);
+    let regular_family = Box::new([
+      FontFamily::Name(std::borrow::Cow::Borrowed("Lato")),
+      FontFamily::Name(std::borrow::Cow::Borrowed("Noto Color Emoji")),
+    ]);
+    let medium_family = Box::new([
+      FontFamily::Name(std::borrow::Cow::Borrowed("Lato")),
+      FontFamily::Name(std::borrow::Cow::Borrowed("Noto Color Emoji")),
+    ]);
 
     let typography_theme = typography_theme(
       regular_family,

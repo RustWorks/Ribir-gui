@@ -11,8 +11,15 @@ pub use styles_sheet::*;
 
 /// Crate a material theme with palette.
 fn new(palette: Palette) -> FullTheme {
-  let regular_family = Box::new([FontFamily::Name("Roboto".into())]);
-  let medium_family = Box::new([FontFamily::Name("Roboto Medium".into())]);
+  let regular_family = Box::new([
+    FontFamily::Name("Roboto".into()),
+    // FontFamily::Name(std::borrow::Cow::Borrowed("Segoe UI Emoji")),
+    FontFamily::Name(std::borrow::Cow::Borrowed("Noto Color Emoji")),
+  ]);
+  let medium_family = Box::new([
+    FontFamily::Name("Roboto Medium".into()),
+    FontFamily::Name(std::borrow::Cow::Borrowed("Noto Color Emoji")),
+  ]);
 
   let typography_theme = typography_theme(
     regular_family,
