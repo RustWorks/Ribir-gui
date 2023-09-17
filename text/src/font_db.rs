@@ -3,8 +3,11 @@ pub use fontdb::{FaceInfo, Family, ID};
 use lyon_path::math::Point;
 use ribir_painter::{PixelImage, Svg};
 use rustybuzz::ttf_parser::{GlyphId, OutlineBuilder};
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::{collections::HashMap, ops::Deref, sync::Arc};
 
+use crate::svg_font_table::SvgDocument;
 use crate::{FontFace, FontFamily};
 /// A wrapper of fontdb and cache font data.
 pub struct FontDB {
@@ -19,6 +22,11 @@ pub struct Face {
   pub source_data: Arc<dyn AsRef<[u8]> + Sync + Send>,
   pub face_data_index: u32,
   pub rb_face: rustybuzz::Face<'static>,
+  #[cfg(feature = "raster_png_font")]
+  raster_image_glyphs: Rc<RefCell<HashMap<GlyphId, Option<PixelImage>>>>,
+  outline_glyphs: Rc<RefCell<HashMap<GlyphId, Option<lyon_path::Path>>>>,
+  svg_glyphs: Rc<RefCell<HashMap<GlyphId, Option<Svg>>>>,
+  svg_docs: Rc<RefCell<HashMap<*const u8, Option<SvgDocument>>>>,
 }
 
 impl FontDB {
@@ -237,6 +245,7 @@ impl Default for FontDB {
   fn default() -> FontDB {
     let mut data_base = fontdb::Database::new();
     data_base.load_font_data(include_bytes!("../Lato-Regular.ttf").to_vec());
+    data_base.load_font_data(include_bytes!("../NotoColorEmoji.ttf").to_vec());
     let default_font = data_base.faces().next().map(|f| f.id).unwrap();
     let mut this = FontDB {
       default_font,
@@ -263,6 +272,11 @@ impl Face {
       face_data_index: face_index,
       rb_face,
       face_id,
+      outline_glyphs: <_>::default(),
+      #[cfg(feature = "raster_png_font")]
+      raster_image_glyphs: <_>::default(),
+      svg_glyphs: <_>::default(),
+      svg_docs: <_>::default(),
     })
   }
 
@@ -273,35 +287,66 @@ impl Face {
 
   // todo: should return its tight bounds
   pub fn outline_glyph(&self, glyph_id: GlyphId) -> Option<lyon_path::Path> {
-    let mut builder = GlyphOutlineBuilder::default();
-    let rect = self
-      .rb_face
-      .outline_glyph(glyph_id, &mut builder as &mut dyn OutlineBuilder);
-    rect.map(move |_| builder.into_path())
+    self
+      .outline_glyphs
+      .borrow_mut()
+      .entry(glyph_id)
+      .or_insert_with(|| {
+        let mut builder = GlyphOutlineBuilder::default();
+        let rect = self
+          .rb_face
+          .outline_glyph(glyph_id, &mut builder as &mut dyn OutlineBuilder);
+        rect.map(move |_| builder.into_path())
+      })
+      .as_ref()
+      .cloned()
   }
 
   #[cfg(feature = "raster_png_font")]
   pub fn glyph_raster_image(&self, glyph_id: GlyphId, pixels_per_em: u16) -> Option<PixelImage> {
     use rustybuzz::ttf_parser::RasterImageFormat;
     self
-      .rb_face
-      .glyph_raster_image(glyph_id, pixels_per_em)
-      .and_then(|img| {
-        if img.format == RasterImageFormat::PNG {
-          Some(PixelImage::from_png(img.data))
-        } else {
-          None
-        }
+      .raster_image_glyphs
+      .borrow_mut()
+      .entry(glyph_id)
+      .or_insert_with(|| {
+        self
+          .rb_face
+          .glyph_raster_image(glyph_id, pixels_per_em)
+          .and_then(|img| {
+            if img.format == RasterImageFormat::PNG {
+              Some(PixelImage::from_png(img.data))
+            } else {
+              None
+            }
+          })
       })
+      .clone()
   }
 
-  pub fn glyph_svg_image(&self, _: GlyphId) -> Option<Svg> {
-    None
-    // todo: need to extract glyph svg image, but the svg parse cost too long.
-    // self
-    //  .rb_face
-    //  .glyph_svg_image(glyph_id)
-    //  .and_then(|data| Svg::parse_from_bytes(data).ok())
+  pub fn glyph_svg_image(&self, glyph_id: GlyphId) -> Option<Svg> {
+    self
+      .svg_glyphs
+      .borrow_mut()
+      .entry(glyph_id)
+      .or_insert_with(|| {
+        self.rb_face.glyph_svg_image(glyph_id).and_then(|data| {
+          self
+            .svg_docs
+            .borrow_mut()
+            .entry(&data[0] as *const u8)
+            .or_insert_with(|| {
+              println!("insert document {}", unsafe {
+                std::str::from_utf8_unchecked(data).len()
+              });
+              SvgDocument::parse(unsafe { std::str::from_utf8_unchecked(data) })
+            })
+            .as_ref()
+            .and_then(|doc| doc.glyph_svg(glyph_id, self.units_per_em()))
+            .and_then(|content| Svg::parse_from_bytes(content.as_bytes()).ok())
+        })
+      })
+      .clone()
   }
 
   #[inline]
