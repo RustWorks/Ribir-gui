@@ -1,6 +1,6 @@
 use crate::{font_db::FontDB, Em, FontFace, FontSize, GlyphBound, Pixel, VisualGlyphs};
 use ribir_algo::ShareResource;
-use ribir_geom::{Rect, Size};
+use ribir_geom::{Point, Rect, Size};
 use ribir_painter::{Brush, Painter, Path, PathPaintStyle};
 use std::{cell::RefCell, rc::Rc};
 
@@ -94,10 +94,23 @@ pub fn draw_glyphs(
         }
       } else if let Some(svg) = face.glyph_svg_image(g.glyph_id) {
         let mut painter = painter.save_guard();
+
+        let mut lt = Point::new(0., 0.);
+        let mut rb = Point::new(svg.size.width, svg.size.height);
+        for p in svg.paths.iter() {
+          rb = rb.max(p.path.bounds().max());
+          // lt = lt.min(p.path.bounds().min());
+        }
+        let size = Size::new(rb.x - lt.x, rb.y - lt.y);
+        // println!("svg path bound size: {:?}", size);
+
+        // let size = svg.size;
+        let bound_size = g.bound.size;
+        let scale = (bound_size.width / size.width).min(bound_size.height / size.height);
         painter
-          .translate(0., unit)
-          .scale(scale, scale)
           .translate(g.bound.min_x(), g.bound.min_y())
+          .scale(scale, scale)
+          .translate(0., unit)
           .draw_svg(&svg);
       } else if let Some(img) = face.glyph_raster_image(g.glyph_id, (unit / font_size) as u16) {
         let m_width = img.width() as f32;
@@ -111,7 +124,7 @@ pub fn draw_glyphs(
           .translate(x_offset, y_offset)
           .scale(scale, scale)
           .draw_img(
-            ShareResource::new(img),
+            ShareResource::new(img.clone()),
             &Rect::from_size(Size::new(m_width, m_height)),
             &None,
           );

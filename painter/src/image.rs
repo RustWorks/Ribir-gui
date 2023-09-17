@@ -17,7 +17,7 @@ impl ColorFormat {
   }
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct PixelImage {
   data: Cow<'static, [u8]>,
   width: u32,
