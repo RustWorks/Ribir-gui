@@ -94,7 +94,8 @@ fn calc_mask_alpha(pos: vec2<f32>, mask_idx: i32) -> f32 {
 }
 
 
-fn calc_offset(x: f32, y: f32, x_0: f32, y_0: f32, r_0: f32, x_1: f32, y_1: f32, r_1: f32) -> f32 {
+// input the center and radius of the circles, return the tag of resolvable (1. mean resolvable and -1. unresolvable) and the offset if tag is resolvable.
+fn calc_offset(x: f32, y: f32, x_0: f32, y_0: f32, r_0: f32, x_1: f32, y_1: f32, r_1: f32) -> vec2<f32> {
     /*
         see definition at https://html.spec.whatwg.org/multipage/canvas.html#dom-context-2d-createradialgradient
         with offset ω, Radial gradients must be rendered by following these steps:
@@ -138,12 +139,12 @@ fn calc_offset(x: f32, y: f32, x_0: f32, y_0: f32, r_0: f32, x_1: f32, y_1: f32,
     
     if (abs(a) < 0.1) {
         if (abs(b) < 0.1) {
-            return -1.;
+            return vec2(-1., 0.);
         } else {
-            return -c / b;
+            return vec2(1., -c / b);
         }
     } else if (delta < 0.) {
-        return -1.;
+        return vec2(-1., 0.);
     } 
 
     let sqrt_delta = sqrt(delta);
@@ -151,7 +152,7 @@ fn calc_offset(x: f32, y: f32, x_0: f32, y_0: f32, r_0: f32, x_1: f32, y_1: f32,
     let w1 = (-b + sqrt_delta) / _2a;
     let w2 = (-b - sqrt_delta) / _2a;
     
-    return max(w1, w2);
+    return vec2(1., max(w1, w2));
 }
 
 @fragment
@@ -160,11 +161,14 @@ fn fs_main(input: FragInput) -> @location(0) vec4<f32> {
     let pos = prim.transform * vec3(input.pos.xy, 1.);
     let alpha = calc_mask_alpha(input.pos.xy, prim.mask_head);
 
-    var offset = calc_offset(pos.x, pos.y, prim.start_center.x, prim.start_center.y, prim.start_radius, prim.end_center.x, prim.end_center.y, prim.end_radius);
-    if (offset < 0.) {
+    let res = calc_offset(pos.x, pos.y, prim.start_center.x, prim.start_center.y, prim.start_radius, prim.end_center.x, prim.end_center.y, prim.end_radius);
+    
+    if (res[0] < 0. || (
+        prim.start_radius != prim.end_radius &&
+        res[1] < (prim.start_radius / (prim.start_radius - prim.end_radius)))) {
         discard;
     }
-
+    var offset = res[1];
     if (prim.spread == 0u) {
         // pad
        offset = min(1., max(0., offset));
