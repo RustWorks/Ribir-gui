@@ -5,7 +5,7 @@ use crate::{gpu_backend::atlas::ATLAS_MAX_ITEM, GPUBackendImpl};
 use guillotiere::euclid::SideOffsets2D;
 use rayon::{prelude::ParallelIterator, slice::ParallelSlice};
 use ribir_algo::ShareResource;
-use ribir_geom::{rect_corners, DevicePoint, DeviceRect, DeviceSize, Point, Transform};
+use ribir_geom::{rect_corners, DevicePoint, DeviceRect, DeviceSize, PhysicUnit, Point, Transform};
 use ribir_painter::{
   image::ColorFormat, AntiAliasing, PaintPath, Path, PathSegment, PixelImage, Vertex, VertexBuffers,
 };
@@ -123,13 +123,15 @@ where
       .filter(|h| h.attr >= prefer_scale)
       .copied()
     {
-      let slice = alpha_tex_slice(&self.alpha_atlas, &h).cut_blank_edge();
-      let matrix = cache_to_view_matrix(key.path(), transform, slice.rect.origin, h.attr);
+      let slice = alpha_tex_slice(&self.alpha_atlas, &h);
+      let mask_slice = slice.cut_blank_edge();
+      let matrix = cache_to_view_matrix(key.path(), transform, mask_slice.rect.origin, h.attr);
       (slice, matrix)
     } else {
       let path = key.path().clone();
       let scale_bounds = path.bounds().scale(prefer_scale, prefer_scale);
       let prefer_cache_size = path_add_edges(scale_bounds.round_out().size.to_i32().cast_unit());
+
       let h = self
         .alpha_atlas
         .allocate(key, prefer_scale, prefer_cache_size, gpu_impl);
@@ -146,7 +148,7 @@ where
         .fill_task
         .push(FillTask { slice, path, ts, clip_rect: None });
 
-      (mask_slice, matrix)
+      (slice, matrix)
     }
   }
 
@@ -381,7 +383,7 @@ fn extend_buffer<V>(dist: &mut VertexBuffers<V>, from: VertexBuffers<V>) {
   }
 }
 
-const BLANK_EDGE: i32 = 2;
+const BLANK_EDGE: i32 = 1;
 
 fn path_add_edges(mut size: DeviceSize) -> DeviceSize {
   size.width += BLANK_EDGE * 2;

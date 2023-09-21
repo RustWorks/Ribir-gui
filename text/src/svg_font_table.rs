@@ -10,6 +10,8 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::io::prelude::*;
 
+use crate::font_db::Face;
+
 pub(crate) struct SvgDocument {
   elems: HashMap<String, String>,
 }
@@ -39,7 +41,7 @@ impl SvgDocument {
     Some(doc)
   }
 
-  pub fn glyph_svg(&self, glyph: GlyphId, units_per_em: u16) -> Option<String> {
+  pub fn glyph_svg(&self, glyph: GlyphId, face: &Face) -> Option<String> {
     let key = format!("glyph{}", glyph.0);
     if !self.elems.contains_key(&key) {
       return None;
@@ -55,9 +57,15 @@ impl SvgDocument {
       }
     }
 
+    let units_per_em = face.units_per_em() as i32;
+    let ascender = face.rb_face.ascender() as i32;
     let mut writer = std::io::Cursor::new(Vec::new());
 
-    writer.write(format!("<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"{}\" height=\"{}\">", units_per_em, units_per_em).as_bytes()).unwrap();
+    writer.write(format!(
+      "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\" width=\"{}\" height=\"{}\" viewBox=\"{},{},{},{}\">",
+       units_per_em, units_per_em,
+       0, -ascender, units_per_em, units_per_em
+      ).as_bytes()).unwrap();
     writer.write("<defs>".as_bytes()).unwrap();
     for link in all_links {
       if let Some(content) = self.elems.get(&link) {

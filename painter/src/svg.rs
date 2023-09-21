@@ -35,7 +35,7 @@ impl Svg {
     let size = tree.size;
     let fit_size = fit_view_box(size, &tree.view_box);
 
-    let bound_rect = Rect::from_size(Size::new(size.width(), size.height()));
+    let bound_rect = Rect::from_size(Size::new(f32::INFINITY, f32::INFINITY));
     let mut painter = crate::Painter::new(bound_rect);
     painter.apply_transform(
       &Transform::translation(-view_rect.x(), -view_rect.y()).then_scale(
@@ -240,7 +240,7 @@ fn convert_to_gradient_stops(stops: &Vec<Stop>) -> Vec<GradientStop> {
       let usvg::Color { red, green, blue } = stop.color;
       GradientStop {
         offset: stop.offset.get(),
-        color: Color::from_rgb(red, green, blue),
+        color: Color::new(red, green, blue, stop.opacity.to_u8()),
       }
     })
     .collect();

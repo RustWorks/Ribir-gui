@@ -342,7 +342,7 @@ impl Face {
               SvgDocument::parse(unsafe { std::str::from_utf8_unchecked(data) })
             })
             .as_ref()
-            .and_then(|doc| doc.glyph_svg(glyph_id, self.units_per_em()))
+            .and_then(|doc| doc.glyph_svg(glyph_id, self))
             .and_then(|content| Svg::parse_from_bytes(content.as_bytes()).ok())
         })
       })
