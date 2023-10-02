@@ -31,6 +31,8 @@ pub enum AppEvent {
   OpenUrl(String),
   /// The event is get global hotkey, it will receive the hotkey event.
   Hotkey(HotkeyEvent),
+  /// The event is sent when the application window focus changed.
+  WndFocusChanged(WindowId, bool),
   /// The custom event, you can send any data with this event.
   Custom(Box<dyn Any + Send>),
 }
@@ -127,6 +129,11 @@ impl App {
                 .unwrap();
               shell_wnd.on_resize(size);
               wnd.on_wnd_resize_event(size);
+            }
+            WindowEvent::Focused(focused) => {
+              let mut event = AppEvent::WndFocusChanged(wnd_id, focused);
+              let app = unsafe { App::shared_mut() };
+              app.events_stream.next(&mut event);
             }
             event => {
               #[allow(deprecated)]
