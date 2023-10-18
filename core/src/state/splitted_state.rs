@@ -36,7 +36,7 @@ where
 {
   type Value = V;
   type OriginReader = O;
-  type Reader = MapReader<V, O::Reader, R>;
+  type Reader = <Self as StateWriter>::Writer;
 
   type Ref<'a> = MapReadRef<V, O::Ref<'a>, R> where Self: 'a;
 
@@ -44,9 +44,7 @@ where
   fn read(&'_ self) -> Self::Ref<'_> { MapReadRef::new(self.origin_writer.read(), self.reader) }
 
   #[inline]
-  fn clone_reader(&self) -> Self::Reader {
-    MapReader::new(self.origin_writer.clone_reader(), self.reader)
-  }
+  fn clone_reader(&self) -> Self::Reader { self.clone_writer() }
 
   #[inline]
   fn origin_reader(&self) -> &Self::OriginReader { &self.origin_writer }
