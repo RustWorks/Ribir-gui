@@ -1,22 +1,31 @@
 # Introduction
 
-> In this chapter, we will use the Ribir syntax to write some simple examples. You only need to understand the general idea, no need to go into details. We will introduce it in detail in the following chapters.
+> In this chapter, we will use the Ribir syntax to write some simple examples. You only need to understand the general idea, we'll go into more detail in the following chapters.
 
 ## What is Ribir?
 
-Ribir is a Rust framework for building cross-platform user interfaces. It allows you to compile applications for desktop, mobile and browser with one code. Ribir uses a non-intrusive declarative programming model that allows you to develop and design user interfaces as an independent module.
+Ribir is an open source Rust framework for building beautiful UI, natively compiled, multi-platform applications from a single codebase.
+
+Ribir uses a non-intrusive declarative programming model that allows you to develop and design user interfaces as an independent module.
 
 Its core design concept is:
 
 > The UI is a re-description of data interaction and continues to respond to modifications of data.
 
-We emphasize "re" here because we think the API is the first description of data interaction, and building UI with Ribir requires only the data API.
+The "re" here signifies that the API serves as the initial description of the data interaction. When building with Ribir, developers only need to focus on the data API to create the UI.
 
 ## Why choose Ribir?
 
 ### Non-intrusive programming model
 
-Ribir only interacts with the API of your data and does not require any pre-design of your data for the user interface: no additional states, no additional notification mechanisms, no inheritance of any base classes or any other pre-constraints. It doesn't break the logic and structure of your existing data, nor does it inject any additional objects. When developing the core part of an application, you can focus on designing the data, logic, and API of the application without thinking about the UI at all.
+Ribir only interacts with the API of your data and does not require any pre-design of your data for the user interface: 
+
+- No additional states
+- No additional notification mechanisms 
+- No inheritance of any base classes
+- No any other pre-constraints. 
+
+It doesn't break the logic and structure of your existing data or inject any additional objects. When developing the core part of an application, you can focus on designing the data, logic, and API of the application without thinking about the UI at all.
 
 The UI directly operates data, and data modifications directly drive UI updates, without any intermediate layers and concepts.
 
@@ -34,13 +43,12 @@ Ribir will map a view tree based on your description of the data, and the view w
 
 The update logic is determined at compile time, and there is no general diff or patch algorithm to execute at runtime.
 
-Ribir uses a Pipe stream to declare the part of the view that needs to change continuously. It can be a property of a widget, a specific widget, or a complete subtree.
 
 ### "Pay-as-you-go" design principle
 
-Because it has to face various complex real-life scenarios, a general GUI framework often has complex designs and rich capabilities, so it is difficult to be lightweight. The way Ribir balances this problem is to provide enough capabilities to ensure development efficiency, and requiring that all capabilities only need to be understood and have overhead when they are used. A few examples:
+Due to the need to handle multiple complex real-life situations, a general GUI framework tends to have complex designs and extensive features. As a result, it is difficult to keep it lightweight. The way Ribir balances this problem is to provide enough capabilities to ensure development efficiency, and requiring that all capabilities only need to be understood and have overhead when they are used. A few examples:
 
-**Pure composition**: Ribir uses widgets to build interfaces. Unlike common object-oriented GUI frameworks, Ribir widgets do not need to inherit a base class or hold a base object. It is a pure composition model, even the parent-child relationship and built-in fields are completed through composition. The advantage of this is that the widget only needs to focus on the capabilities it provides, so it can be made very small to improve reuse. For example, Ribir has many very mini built-in widgets, and using these built-in widgets to extend ordinary widgets is powerful, but does not bring any overhead to them. for example:
+**Pure composition**: Ribir uses widgets to build interfaces. Unlike common object-oriented GUI frameworks, Ribir widgets do not need to inherit a base class or hold a base object. It is a pure composition model, even the parent-child relationship and built-in fields are completed through composition. The advantage of this is that the widget only needs to focus on the capabilities it provides, so it can be made very small to improve reuse. For example, Ribir has many very mini built-in widgets, and using these built-in widgets to extend ordinary widgets is powerful, but does not bring any overhead to them. For example:
 
 ```rust
 fn_widget!{
@@ -82,7 +90,7 @@ Unlike general GUI frameworks that use inheritance and do not have any type cons
 
 ### Stability
 
-The core framework of Ribir is in a basically stable state, and the API and syntax will be iterated with a cautious attitude. Although the widget library already has many available widgets, it is still in a very rough state, and there will be major changes in each version.
+The core framework of Ribir is in a basically stable state, and the API and syntax will be iterated with a cautious attitude. Although the widget library already has many available widgets, it is still in a very rough state, and each version will have major changes.
 
 ### Platform coverage
 
